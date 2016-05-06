@@ -24,4 +24,4 @@ visited_pages = ip_page_df[ip_page_df.ip.isin(most_active_ips)]
 
 visited_pages_count = visited_pages.groupby("page").count().sort(desc("count"))
 visited_pages_count.show()
-visited_pages_count.write().save("/user/s19433/spark_lab4_result")
+visited_pages_count.write.save("/user/s19433/spark_lab4_result")

@@ -32,5 +32,5 @@ def get_pairs_of_connections(line):
 
 ids_count = text_file.flatMap(lambda line: get_pairs_of_connections(line)).map(lambda ids: (ids, 1)).reduceByKey(lambda a, b: a + b)
 df = ids_count.toDF(["idents", "count"]).sort(desc("count"))
-df.show(25)
-df.write().save("/user/s19433/spark_lab5_result")
+df.show(10)
+df.write.save("/user/s19433/spark_lab5_result")

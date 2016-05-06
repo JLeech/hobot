@@ -5,8 +5,8 @@ from pyspark import SparkContext
 sc = SparkContext("yarn-client", "s19433")
 sqlContext = SQLContext(sc)
 
-#text_file = sc.textFile("/data/access_logs/access.log.2015-12-19")
-text_file = sc.textFile("/user/s19433/small.log")
+text_file = sc.textFile("/data/access_logs/access.log.2015-12-19")
+#text_file = sc.textFile("/user/s19433/small.log")
 
 def get_ip_and_data_size(line):
 	line_data = line.split("\"")
@@ -16,7 +16,7 @@ def get_ip_and_data_size(line):
 
 
 ip_count = text_file.map(lambda line: get_ip_and_data_size(line)).reduceByKey(lambda a, b: a + b)
-df = ip_count.toDF(["ip", "value"])
-df.sort(desc("value")).show()
-df.sort.write().save("/user/s19433/spark_lab2_result")
+df = ip_count.toDF(["ip", "value"]).sort(desc("value"))
+df.show()
+df.write.save("/user/s19433/spark_lab2_result")
 
