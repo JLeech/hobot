@@ -22,4 +22,4 @@ most_active_ips_rows = ip_page_df.groupby("ip").count().sort(desc("count")).coll
 most_active_ips = map(lambda row: row.ip, most_active_ips_rows)
 visited_pages = ip_page_df[ip_page_df.ip.isin(most_active_ips)]
 
-visited_pages_count = visited_pages.groupby("page").count().sort(desc("count")).show(25)
+visited_pages_count = visited_pages.groupby("page").count().sort(desc("count")).show()

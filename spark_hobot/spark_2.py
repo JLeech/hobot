@@ -17,4 +17,6 @@ def get_ip_and_data_size(line):
 
 ip_count = text_file.map(lambda line: get_ip_and_data_size(line)).reduceByKey(lambda a, b: a + b)
 df = ip_count.toDF(["ip", "value"])
-df.sort(desc("value")).show(10)
+df.sort(desc("value")).show()
+df.sort.write().save("/user/s19433/spark_lab2_result")
+
