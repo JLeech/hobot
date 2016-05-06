@@ -14,8 +14,8 @@ def get_ip_page(line):
 	page = line_data[1].split(" ")[1]
 	return(ip, page)
 
-text_file = sc.textFile("/data/access_logs/access.log.2015-12-19")
-#text_file = sc.textFile("/user/s19433/small.log")
+#text_file = sc.textFile("/data/access_logs/access.log.2015-12-19")
+text_file = sc.textFile("/user/s19433/small.log")
 ip_page_df = text_file.map(lambda line: get_ip_page(line) ).toDF(["ip","page"])
 
 most_active_ips_rows = ip_page_df.groupby("ip").count().sort(desc("count")).collect()[0:100]
