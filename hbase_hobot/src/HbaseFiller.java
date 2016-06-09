@@ -26,6 +26,9 @@ import java.net.URISyntaxException;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -67,7 +70,7 @@ public class HbaseFiller extends Configured implements Tool {
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(Text.class);
         
-        job.setNumReduceTasks(1);
+        job.setNumReduceTasks(7);
 
         prepareHbase();
 
@@ -130,12 +133,29 @@ public class HbaseFiller extends Configured implements Tool {
               String domain_no_www = domain_name.startsWith("www.") ? domain_name.substring(4) : domain_name;
               domain.set(domain_no_www);
               //Text timestamp_domain = new Text(date_text + ":" + domain);
-              Text domain_count = new Text( domain ); 
-              context.write(date_text, one);
+              //Text domain_count = new Text( domain ); 
+              //writeToHbase(date_text, 1);
+              context.write(date_text, domain);
             }catch(URISyntaxException e){
               e.printStackTrace();
             }
         }
+        
+       //  public void writeToHbase(Text key, int value){
+       //      Configuration conf = HBaseConfiguration.create();
+       //      TableName tableName = TableName.valueOf("table_19433");
+       //      try{
+       //          HTable table = new HTable(conf, tableName);
+       //          //String[] hbase_data = key.toString().split(":");
+       //          //Put put = new Put(Bytes.toBytes(hbase_data[0]));
+       //          Put put = new Put(Bytes.toBytes(key.toString()));
+       //          put.add(Bytes.toBytes("colfam"), Bytes.toBytes("value"), Bytes.toBytes(1) );
+       //          //put.add(Bytes.toBytes("colfam"), Bytes.toBytes("address"), Bytes.toBytes(value) );
+       //          table.put(put);
+       //      }catch(IOException e){
+       //          e.printStackTrace();
+       //      }
+       // }
     }
 
     public static class HbaseFillerReducer extends Reducer<Text, Text, Text, Text> {
@@ -147,37 +167,22 @@ public class HbaseFiller extends Configured implements Tool {
 
             for (Text value: values) {
               String domain = value.toString();
-              if domain_count.containsKey(domain){
-                domain_count.put(domain, domain_count.get(domain) + 1 )
+              if (domain_count.containsKey(domain)){
+                domain_count.put(domain, domain_count.get(domain) + 1 );
               }else{
-                domain_count.put(domain, 1 )
+                domain_count.put(domain, 1 );
               }
             }
 
-            String domains = new String();
+            String domains = new String("dd");
             for (Map.Entry entry : domain_count.entrySet()) {
               System.out.println("Key: " + entry.getKey() + " Value: " + entry.getValue());
             }
 
-            String[] hbase_data = key.toString().split(":");
-            Text output_value = new Text(hbase_data[1] + " " + sum); 
-            //writeToHbase(key, sum);
-            context.write(key, output_value);
+            //String[] hbase_data = key.toString().split(":");
+            //Text output_value = new Text(hbase_data[1] + " " + sum); 
+            Text xx = new Text("xx");
+            context.write(key, xx);
        }
-
-       // public void writeToHbase(Text key, int value){
-       //      Configuration conf = HBaseConfiguration.create();
-       //      TableName tableName = TableName.valueOf("table_19433");
-       //      try{
-       //          HTable table = new HTable(conf, tableName);
-       //          String[] hbase_data = key.toString().split(":");
-       //          Put put = new Put(Bytes.toBytes(hbase_data[0]));
-       //          put.add(Bytes.toBytes("colfam"), Bytes.toBytes("value"), Bytes.toBytes(value) );
-       //          put.add(Bytes.toBytes("colfam"), Bytes.toBytes("address"), Bytes.toBytes(value) );
-       //          table.put(put);
-       //      }catch(IOException e){
-       //          e.printStackTrace();
-       //      }
-       // }
     }
 }

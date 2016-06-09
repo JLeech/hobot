@@ -91,3 +91,108 @@ http://spark.apache.org/docs/latest/api/python/pyspark.sql.html#pyspark.sql.Data
 http://spark.apache.org/docs/latest/sql-programming-guide.html
 http://spark.apache.org/docs/latest/api/python/pyspark.sql.html#pyspark.sql.DataFrame
 http://www.cloudera.com/documentation/enterprise/5-3-x/topics/admin_hbase_import.html
+
+HBASE_CLASSPATH=$(hbase mapredcp | tr ':' ',')
+
+
+------------------------------------------------------
+add jar /opt/cloudera/parcels/CDH/lib/hive/lib/hive-contrib.jar;
+
+-- 46.17.238.36 - - [12/Nov/2015:00:00:00 +0400] "GET /cgi-bin/survey.cgi HTTP/1.1" 404 0 "-" "Mozilla/6.66"
+-- 154.73.129.105 - - [12/Nov/2015:00:00:00 +0400] "GET /cgi-bin/nph-exploitscanget.cgi HTTP/1.1" 404 0 "-" "Mozilla/6.66"
+-- 197.231.214.121 - - [12/Nov/2015:00:00:00 +0400] "GET /print.cgi HTTP/1.1" 404 0 "-" "Mozilla/6.66"
+-- 197.234.100.211 - - [12/Nov/2015:00:00:00 +0400] "GET /details.cgi HTTP/1.1" 404 0 "-" "Mozilla/6.66"
+-- 194.110.69.79 - - [12/Nov/2015:00:00:00 +0400] "GET /id97715 HTTP/1.1" 200 18439 "-" "Mozilla/4.0 (compatible; MSIE 7.0; TOB 6.13; Windows NT 5.1; Trident/4.0; BTRS129235; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)"
+-- 91.210.214.168 - - [12/Nov/2015:00:00:00 +0400] "GET /id60269 HTTP/1.1" 200 9764 "-" "Mozilla/5.0 (Windows NT 6.2; Win64; x64; rv:31.0) Gecko/20100101 Firefox/31.0 Cyberfox/31.0.1"
+-- 213.142.114.75 - - [12/Nov/2015:00:00:00 +0400] "GET /id75409 HTTP/1.1" 200 23810 "-" "Mozilla/5.0 (Windows NT 5.1; U; de; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6 Opera 11.00"
+-- 188.93.131.140 - - [12/Nov/2015:00:00:00 +0400] "GET /id56230 HTTP/1.1" 200 23094 "-" "Mozilla/5.0 (Linux; Android 5.0.2; SM-T535 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.84 Safari/537.36"
+-- 212.84.56.218 - - [12/Nov/2015:00:00:00 +0400] "GET /id73585 HTTP/1.1" 200 24225 "-" "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.99 Safari/537.36"
+-- 91.221.248.7 - - [12/Nov/2015:00:00:00 +0400] "GET /id51636 HTTP/1.1" 200 30428 "-" "Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.99 Safari/537.36"
+use shtokhov;
+
+DROP TABLE IF EXISTS serdeuserlogs;
+
+CREATE EXTERNAL TABLE serdeuserlogs (
+    host STRING,
+    date STRING,
+    request STRING,
+    response_code STRING,
+    response_size STRING
+)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'
+WITH SERDEPROPERTIES(
+   "input.regex"= '^(\\S*) \\S* \\S* \\[(\\S*) .*] \\"\\S* (\\/\\S*) .*?\\" (\\d*) (\\d*) .*$',
+   "output.format.string" = '%1$s %2$s %3$s %4$s %5$s'
+)
+LOCATION "/user/shtokhov/test_log/";
+
+-- DROP TABLE IF EXISTS user_day;
+-- create table user_day as
+-- select distinct(host), 
+--     from_unixtime(unix_timestamp(date ,'dd/MMM/yyyy:HH:mm:ss'), 'yyyyMMdd') as date_hit 
+--         from serdeuserlogs;
+
+
+select count(*)
+from (select host from user_day where date_hit=='20151021') a
+left join ( select host from user_day where date_hit=='20151020' ) b on a.host=b.host
+where b.host is NULL
+----------------------------------------------------------
+package ru.mipt;
+
+// PutExample Example application inserting data into HBase
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.TableExistsException;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Map.Entry;
+
+public class PutExample {
+    public static void createTable(Admin admin, TableName table, byte[][] splitKeys, String... colfams) throws IOException {
+        HTableDescriptor desc = new HTableDescriptor(table);
+        for (String cf : colfams) {
+            HColumnDescriptor coldef = new HColumnDescriptor(cf);
+            desc.addFamily(coldef);
+        }
+        if (splitKeys != null) {
+            admin.createTable(desc, splitKeys);
+        } else {
+            admin.createTable(desc);
+        }
+    }
+
+    public static void main(String[] args) throws IOException {
+        Configuration conf = HBaseConfiguration.create();
+        Connection connection = ConnectionFactory.createConnection(conf);
+        Admin admin = connection.getAdmin();
+
+        TableName tableName = TableName.valueOf("testtable123");
+        if (!admin.tableExists(tableName)) {
+            System.err.println("table not exists " + tableName.toString());
+            createTable(admin, tableName, null, "colfam1", "colfam2");
+        }
+
+        HTable table = new HTable(conf, tableName);
+
+        Put put = new Put(Bytes.toBytes("row1"));
+        put.add(Bytes.toBytes("colfam1"), Bytes.toBytes("qual4"), Bytes.toBytes("val4"));
+        put.add(Bytes.toBytes("colfam1"), Bytes.toBytes("qual2"), Bytes.toBytes("val2"));
+
+        table.put(put);
+    }
+}
+
+
+HBASE_CLASSPATH=$(hbase mapredcp | tr ':' ',')
